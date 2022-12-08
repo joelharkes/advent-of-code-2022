@@ -29,3 +29,32 @@ function getPoints(fight){
 var fightScores = fights.map(getPoints);
 var totalScore = fightScores.reduce((a,b)=> a+b, 0);
 console.log(totalScore);
+
+// part 2
+
+var actions = [
+    ['A', 'X'],
+    ['B', 'Y'],
+    ['C', 'Z']
+];
+
+function getPointsForResults(fight){
+    var [action, reaction] = fight.split(" ");
+    var index = actions.findIndex(x=> x[0] == action);
+
+    // if i have to lose take the previous action.
+    if(reaction === 'X'){
+        index--;
+    }
+    // if i have to win, take the next action.
+    if(reaction === 'Z'){
+        index++;
+    }
+    var toChooseIndex = (index+3) % 3;
+    var actionToChoose = actions[toChooseIndex][1];
+    return getPoints(action + ' ' + actionToChoose);
+}
+
+var fightScores = fights.map(getPointsForResults);
+var totalScore = fightScores.reduce((a,b)=> a+b, 0);
+console.log(totalScore);
