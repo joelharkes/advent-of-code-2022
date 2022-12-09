@@ -1,5 +1,4 @@
-const fs = require('fs');
-
+import fs from 'fs';
 
 function assignmentFitsIn(assignment1: Assigment, assignment2: Assigment): boolean {
     return assignment1.min <= assignment2.min && assignment1.max >= assignment2.max
