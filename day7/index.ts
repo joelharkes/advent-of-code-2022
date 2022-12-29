@@ -46,7 +46,7 @@ class Directory implements Node {
 
 function parseInput(input: string): Directory {
 
-    const commands = (text)
+    const commands = (input)
         .replace(/\$ /, '') // remove first $\s as this is not split.
         .split(/\n\$\s/g);
 
