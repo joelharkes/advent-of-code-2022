@@ -1,7 +1,4 @@
 import fs from 'fs';
-import { rootCertificates } from 'tls';
-
-
 
 interface Node {
     size(): number;
@@ -21,7 +18,7 @@ class File implements Node {
     }
 }
 
-class Dir implements Node {
+class Directory implements Node {
     nodes = {} as {[name: string]: Node } ;
     constructor(public parent: Node|undefined, private dirName: string){
     }
@@ -41,20 +38,20 @@ class Dir implements Node {
         return this.dirName;
     }
 
-    dirs(): Dir[] {
+    dirs(): Directory[] {
         return Object.values(this.nodes)
-            .filter(node => node instanceof Dir) as Dir[];
+            .filter(node => node instanceof Directory) as Directory[];
     }
 }
 
-function parseInput(input: string): Dir {
+function parseInput(input: string): Directory {
 
     const commands = (text)
         .replace(/\$ /, '') // remove first $\s as this is not split.
         .split(/\n\$\s/g);
 
     let filePath = '/';
-    let currentDir = new Dir(undefined, '');
+    let currentDir = new Directory(undefined, '');
     const root = currentDir;
 
     for(const command of commands){
@@ -65,13 +62,13 @@ function parseInput(input: string): Dir {
             const path = params[0] as string;
             if(path.startsWith('/')){
                 filePath = path;
-                currentDir = findOrMakeDir(root, filePath) as Dir;
+                currentDir = findOrMakeDir(root, filePath) as Directory;
             } else if(path === '..') {
-                currentDir = (currentDir.parent ?? currentDir) as Dir;
+                currentDir = (currentDir.parent ?? currentDir) as Directory;
                 filePath = directoryUp(filePath);
             } else {
                 filePath += '/' + path;
-                currentDir = findOrMakeDir(root, filePath) as Dir;
+                currentDir = findOrMakeDir(root, filePath) as Directory;
             }
         } else if (exe === 'ls') {
             results.forEach(x=> {
@@ -91,27 +88,27 @@ function directoryUp(path: string) : string {
     return nodes.join('/');
 }
 
-function findOrMakeDir(root: Dir, path: string):Dir {
+function findOrMakeDir(root: Directory, path: string):Directory {
     var paths = path.split('/');
     paths.shift();
     return paths.reduce((currentDir, path) => {
-        var node = currentDir?.nodes?.[path] as Dir
-        if(node instanceof Dir){
+        var node = currentDir?.nodes?.[path] as Directory
+        if(node instanceof Directory){
             return node;
         }
-        const newDir = new Dir(currentDir, path);
+        const newDir = new Directory(currentDir, path);
         currentDir.add(newDir);
         return newDir;
     }, root); 
 }
 
-function findNode(root: Dir, path: string): Node|undefined {
+function findNode(root: Directory, path: string): Node|undefined {
     var paths = path.split('/');
     paths.shift();
-    return paths.reduce((currentDir, path) => currentDir?.nodes?.[path] as Dir, root);
+    return paths.reduce((currentDir, path) => currentDir?.nodes?.[path] as Directory, root);
 }
 
-function filterNodes(root: Dir, filterFn: (dir: Dir) => boolean): Dir[] {
+function filterNodes(root: Directory, filterFn: (dir: Directory) => boolean): Directory[] {
     const children = root.dirs().flatMap(x=> filterNodes(x, filterFn));
     if(filterFn(root)){
         return [root, ...children];
@@ -120,12 +117,12 @@ function filterNodes(root: Dir, filterFn: (dir: Dir) => boolean): Dir[] {
 }
 
 
-function forEachNode(root: Dir, eachFn: (dir: Dir) => any): void {
+function forEachNode(root: Directory, eachFn: (dir: Directory) => any): void {
     root.dirs().flatMap(subNode => forEachNode(subNode, eachFn));
     eachFn(root);
 }
 
-function reduceNode<T>(root: Dir, reduceFn: (previous: T, newDir: Dir) => T, initial: T){
+function reduceNode<T>(root: Directory, reduceFn: (previous: T, newDir: Directory) => T, initial: T){
     let result = initial;
     forEachNode(root, (dir) => {
         result = reduceFn(result, dir);
