@@ -111,17 +111,45 @@ function findNode(root: Dir, path: string): Node|undefined {
     return paths.reduce((currentDir, path) => currentDir?.nodes?.[path] as Dir, root);
 }
 
-function findDirsWith(root: Dir, filterFn: (dir: Dir) => boolean): Dir[] {
-    const children = root.dirs().flatMap(x=> findDirsWith(x, filterFn));
+function filterNodes(root: Dir, filterFn: (dir: Dir) => boolean): Dir[] {
+    const children = root.dirs().flatMap(x=> filterNodes(x, filterFn));
     if(filterFn(root)){
         return [root, ...children];
     }
     return children;
 }
 
+
+function forEachNode(root: Dir, eachFn: (dir: Dir) => any): void {
+    root.dirs().flatMap(subNode => forEachNode(subNode, eachFn));
+    eachFn(root);
+}
+
+function reduceNode<T>(root: Dir, reduceFn: (previous: T, newDir: Dir) => T, initial: T){
+    let result = initial;
+    forEachNode(root, (dir) => {
+        result = reduceFn(result, dir);
+    });
+    return result;
+}
+
 var text: string = fs.readFileSync(__dirname + '/data.txt', 'utf-8');
 var tree = parseInput(text);
 
-const nodes = findDirsWith(tree, x=> x.size() < 100000)
+const nodes = filterNodes(tree, x=> x.size() < 100000)
 const total = nodes.reduce((sum, node) => sum + node.size(), 0);
 console.log(total);
+
+// part 2
+const totalSpace = 70000000;
+const spaceLeft = totalSpace - tree.size();
+const appSize = 30000000;
+const neededSpace = appSize - spaceLeft;
+const smallestNodeToDelete = reduceNode(tree,(prev,newDir) => {
+    var size = newDir.size();
+    return size >= neededSpace && size < prev.size()
+        ? newDir 
+        : prev;
+    }, tree);
+
+console.log('smallest delete',smallestNodeToDelete.size());
